@@ -1,0 +1,77 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+class ConfigurationManager{
+    private static ConfigurationManager _instance;
+
+    private Dictionary<string, string> _settings;
+
+    private ConfigurationManager(){
+        _settings = new Dictionary<string, string>();
+    }
+
+    public static ConfigurationManager GetInstance(){
+        if (_instance == null){
+            _instance = new ConfigurationManager();
+        }
+        return _instance;
+    }
+
+    public void Set(string key, string value)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            throw new ArgumentException("Ключ не может быть пустым");
+
+        _settings[key] = value;
+    }
+
+    public string Get(string key)
+    {
+        if (!_settings.ContainsKey(key))
+            throw new KeyNotFoundException($"Настройка '{key}' не найдена");
+
+        return _settings[key];
+    }
+    public void SaveToFile(string path)
+    {
+        using (StreamWriter writer = new StreamWriter(path))
+        {
+            foreach (var pair in _settings)
+            {
+                writer.WriteLine($"{pair.Key}={pair.Value}");
+            }
+        }
+    }
+
+    public void LoadFromFile(string path){
+        if (!File.Exists(path))
+            throw new FileNotFoundException("Нет файла");
+
+        foreach (var line in File.ReadAllLines(path)){
+            var parts = line.Split('=');
+            if (parts.Length == 2)
+            {
+                _settings[parts[0]] = parts[1];
+            }
+        }
+    }
+}
+
+class Program{
+    static void Main(){
+        var config1 = ConfigurationManager.GetInstance();
+        var config2 = ConfigurationManager.GetInstance();
+
+        Console.WriteLine("Один объект: " + ReferenceEquals(config1, config2));
+        config1.Set("Theme", "Dark");
+        config1.Set("Language", "RU");
+
+        Console.WriteLine(config2.Get("Theme"));
+
+        config1.SaveToFile("config.txt");
+        config2.LoadFromFile("config.txt");
+
+        Console.WriteLine("Всё");
+    }
+}
