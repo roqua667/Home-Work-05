@@ -1,0 +1,111 @@
+using System;
+using System.Collections.Generic;
+
+
+
+
+class Product : ICloneable
+{
+    public string Name { get; set; }
+    public double Price { get; set; }
+    public int Quantity { get; set; }
+
+    public object Clone(){
+        return new Product{
+            Name = this.Name,
+            Price = this.Price,
+            Quantity = this.Quantity
+        };
+    }
+
+    public double GetTotalPrice(){
+        return Price * Quantity;
+    }
+}
+class Discount : ICloneable
+{
+    public string Title { get; set; }
+    public double Percentage { get; set; }
+
+    public object Clone(){
+        return new Discount{
+            Title = this.Title,
+            Percentage = this.Percentage
+        };
+    }
+}
+class Order : ICloneable
+{
+    public List<Product> Products { get; set; } = new List<Product>();
+    public List<Discount> Discounts { get; set; } = new List<Discount>();
+    public double DeliveryCost { get; set; }
+    public string PaymentMethod { get; set; }
+
+    public object Clone(){
+        Order clonedOrder = new Order{
+            DeliveryCost = this.DeliveryCost,
+            PaymentMethod = this.PaymentMethod
+        };
+
+        foreach (var product in this.Products){
+            clonedOrder.Products.Add((Product)product.Clone());
+        }
+
+        foreach (var discount in this.Discounts){
+            clonedOrder.Discounts.Add((Discount)discount.Clone());
+        }
+
+        return clonedOrder;
+    }
+
+    public double CalculateTotal(){
+        double total = 0;
+        foreach (var product in Products){
+            total += product.GetTotalPrice();
+        }
+
+        foreach (var discount in Discounts){
+            total -= total * (discount.Percentage / 100);
+        }
+        total += DeliveryCost;
+        return total;
+    }
+
+    public void Show(){
+        Console.WriteLine("Товары");
+        foreach (var product in Products){
+            Console.WriteLine($"{product.Name} - {product.Quantity} штук по {product.Price}");
+        }
+
+        Console.WriteLine("Способ оплаты " + PaymentMethod);
+        Console.WriteLine("Доставка " + DeliveryCost);
+        Console.WriteLine("Итог " + CalculateTotal());
+    }
+}
+class Program{
+    static void Main(){        
+            Order templateOrder = new Order{
+            DeliveryCost = 1000,
+            PaymentMethod = "Карта"
+        };
+
+        templateOrder.Products.Add(new Product{
+            Name = "Ноутбук",
+            Price = 300000,
+            Quantity = 1
+        });
+
+        templateOrder.Discounts.Add(new Discount{
+            Title = "Скидка 10%",
+            Percentage = 10
+        });
+
+        Order newOrder = (Order)templateOrder.Clone();
+
+        newOrder.PaymentMethod = "Наличные";
+        newOrder.Products[0].Quantity = 2;
+
+        Console.WriteLine("Клонированный");
+        newOrder.Show();
+    }
+}
